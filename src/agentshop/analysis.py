@@ -295,8 +295,10 @@ def agent_vs_human_shares(base_choices: pd.DataFrame) -> pd.DataFrame:
     agent = (c.groupby(["category", "model"]).chosen_product_id.value_counts(normalize=True)
              .rename("share").reset_index().rename(columns={"chosen_product_id": "product_id"}))
     wide = agent.pivot_table(index=["category", "product_id"], columns="model", values="share", fill_value=0)
-    hs = human_shares().set_index(["category", "product_id"])["human_share"]
-    wide = wide.join(hs.rename("human"), how="outer").fillna(0).reset_index()
+    hs = human_shares().set_index(["category", "product_id"])
+    # human = share of total orders; human_per_month = share of orders per month on sale (robustness check)
+    wide = wide.join(hs[["human_share", "human_rate_share"]].rename(
+        columns={"human_share": "human", "human_rate_share": "human_per_month"}), how="outer").fillna(0).reset_index()
     wide["label"] = wide.product_id.str.split("_").str[1].str.upper()
     return wide
 

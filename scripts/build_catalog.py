@@ -19,6 +19,7 @@ category we:
 Outputs
   configs/catalogs/{key}.yaml      attributes shown to the agent + provenance
   data/processed/human_shares.csv  real Olist sales share within each set of 8
+                                   (plus share of orders per month on sale, as a robustness check)
 
 Usage
   python scripts/build_catalog.py [--raw data/raw/olist] [--seed 7]
@@ -175,6 +176,11 @@ def build_one(key: str, spec: dict, stats: pd.DataFrame, text: pd.DataFrame, see
     top["label"] = [f"{spec['label_prefix']} {c}" for c in letters]
     top["human_share"] = top.orders / top.orders.sum()
     top["human_revenue_share"] = top.revenue / top.revenue.sum()
+    # Robustness: products were on sale for different lengths of time (5 to 17 months), so total orders
+    # partly measure availability. Share of orders per month on sale (first to last sale, min 1 month).
+    top["months_on_sale"] = ((top.last_sale - top.first_sale).dt.days / 30.44).clip(lower=1)
+    top["orders_per_month"] = top.orders / top.months_on_sale
+    top["human_rate_share"] = top.orders_per_month / top.orders_per_month.sum()
     top = top.sort_values("label")
 
     products = []
@@ -222,7 +228,9 @@ def build_one(key: str, spec: dict, stats: pd.DataFrame, text: pd.DataFrame, see
         "products": products,
     }
     shares = top.assign(category=key)[
-        ["category", "label", "product_id", "orders", "human_share", "human_revenue_share", "price", "rating", "reviews", "promised_days", "freight"]
+        ["category", "label", "product_id", "orders", "human_share", "human_revenue_share",
+         "months_on_sale", "orders_per_month", "human_rate_share",
+         "price", "rating", "reviews", "promised_days", "freight"]
     ].rename(columns={"product_id": "olist_product_id"})
     return catalog, shares, funnel
 
