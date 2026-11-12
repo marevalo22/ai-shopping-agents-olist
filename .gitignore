@@ -1,0 +1,17 @@
+data/raw/
+.env
+.DS_Store
+__pycache__/
+.ipynb_checkpoints/
+
+# Course materials (not ours to publish)
+Class Slides/
+Instructions\ /
+
+# Python / tooling
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Papers: link to arXiv in the README instead of redistributing PDFs
+papers/

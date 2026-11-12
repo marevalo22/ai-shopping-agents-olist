@@ -1,0 +1,157 @@
+category: watch
+display_name: wristwatch
+olist_category: watches_gifts
+prompt_note: null
+currency: BRL
+selection:
+  keyword_regex: rel[oó]gio
+  exclude_regex: parede
+  min_keyword_reviews: 3
+  min_orders: 30
+  funnel:
+    in_category: 1300
+    type_match: 40
+    after_exclusion: 39
+    orders>=30: 20
+    after_variant_collapse: 18
+  dropped_variants:
+  - 380b4664ba5bb18cc9db78ee6bac3558
+  - aa8d88eb4b9cb38894e33fa624c4287f
+  label_seed: 7
+products:
+- product_id: watch_a
+  label: Watch A
+  base_price: 156.0
+  base_rating: 4.12
+  base_reviews: 115
+  base_promised_days: 22
+  base_freight: 16.36
+  human:
+    orders: 116
+    share: 0.0927
+    revenue_share: 0.0989
+    actual_days_median: 10.4
+    late_share: 0.103
+    price_cv: 0.156
+    sellers: 4
+  olist_product_id: 6f3b5b605d91b7439c5e3f5a8dffeea7
+  keyword_reviews: 12
+- product_id: watch_b
+  label: Watch B
+  base_price: 109.9
+  base_rating: 4.07
+  base_reviews: 83
+  base_promised_days: 25
+  base_freight: 15.57
+  human:
+    orders: 84
+    share: 0.0671
+    revenue_share: 0.0502
+    actual_days_median: 12.6
+    late_share: 0.155
+    price_cv: 0.16
+    sellers: 1
+  olist_product_id: 0a57f7d2c983bcf8188589a5fea4a8da
+  keyword_reviews: 6
+- product_id: watch_c
+  label: Watch C
+  base_price: 260.0
+  base_rating: 3.77
+  base_reviews: 117
+  base_promised_days: 24
+  base_freight: 16.19
+  human:
+    orders: 118
+    share: 0.0943
+    revenue_share: 0.1604
+    actual_days_median: 13.2
+    late_share: 0.059
+    price_cv: 0.302
+    sellers: 8
+  olist_product_id: d285360f29ac7fd97640bf0baef03de0
+  keyword_reviews: 20
+- product_id: watch_d
+  label: Watch D
+  base_price: 155.0
+  base_rating: 3.8
+  base_reviews: 191
+  base_promised_days: 23
+  base_freight: 16.84
+  human:
+    orders: 193
+    share: 0.1543
+    revenue_share: 0.1659
+    actual_days_median: 12.9
+    late_share: 0.13
+    price_cv: 0.185
+    sellers: 5
+  olist_product_id: e0d64dcfaa3b6db5c54ca298ae101d05
+  keyword_reviews: 19
+- product_id: watch_e
+  label: Watch E
+  base_price: 110.0
+  base_rating: 4.25
+  base_reviews: 302
+  base_promised_days: 24
+  base_freight: 0.0
+  human:
+    orders: 304
+    share: 0.243
+    revenue_share: 0.1965
+    actual_days_median: 12.0
+    late_share: 0.086
+    price_cv: 0.174
+    sellers: 3
+  olist_product_id: 53b36df67ebb7c41585e8d54d6772e08
+  keyword_reviews: 18
+- product_id: watch_f
+  label: Watch F
+  base_price: 214.0
+  base_rating: 4.11
+  base_reviews: 139
+  base_promised_days: 26
+  base_freight: 16.36
+  human:
+    orders: 140
+    share: 0.1119
+    revenue_share: 0.1576
+    actual_days_median: 14.1
+    late_share: 0.143
+    price_cv: 0.084
+    sellers: 3
+  olist_product_id: 7a10781637204d8d10485c71a6108a2e
+  keyword_reviews: 11
+- product_id: watch_g
+  label: Watch G
+  base_price: 78.0
+  base_rating: 3.91
+  base_reviews: 150
+  base_promised_days: 22
+  base_freight: 15.64
+  human:
+    orders: 154
+    share: 0.1231
+    revenue_share: 0.0638
+    actual_days_median: 7.3
+    late_share: 0.032
+    price_cv: 0.002
+    sellers: 1
+  olist_product_id: a92930c327948861c015c919a0bcb4a8
+  keyword_reviews: 13
+- product_id: watch_h
+  label: Watch H
+  base_price: 146.0
+  base_rating: 4.04
+  base_reviews: 139
+  base_promised_days: 26
+  base_freight: 15.77
+  human:
+    orders: 142
+    share: 0.1135
+    revenue_share: 0.1066
+    actual_days_median: 14.3
+    late_share: 0.162
+    price_cv: 0.121
+    sellers: 5
+  olist_product_id: 461f43be3bdf8844e65b62d9ac2c7a5a
+  keyword_reviews: 17

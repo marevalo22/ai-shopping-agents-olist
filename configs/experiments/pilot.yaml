@@ -1,0 +1,9 @@
+# Pilot: 20 choice-experiment scenarios per category per model, to check that every
+# model runs, parses and costs what we expect. Stop and review before any full run.
+name: pilot
+experiment: choice          # choice | base | coldstart | switching
+categories: [watch, cartridge]
+models: [gemini-3.5-flash-lite, gemini-3.6-flash, gemini-3.1-flash-lite, claude-haiku-5-5]
+n_scenarios: 20             # per category
+seed: 20261112
+prompt: default

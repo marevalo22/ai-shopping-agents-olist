@@ -1,0 +1,48 @@
+# One entry per agent model. Adding a model = adding an entry here (+ its key in .env).
+# Prices are USD per 1M tokens on the paid tier, checked 2026-11-12 (aistudio.google.com/docs/pricing).
+# free_tier: true -> calls cost $0 (Google AI Studio free tier; free-tier prompts may be used by Google
+# to improve its products, which is fine here: prompts contain only Olist product attributes).
+
+models:
+  gemini-3.5-flash-lite:
+    provider: gemini
+    model_id: gemini-3.5-flash-lite
+    params: {temperature: 1.0, max_output_tokens: 400, thinking_level: minimal}
+    price_in: 0.30
+    price_out: 2.50
+    free_tier: true
+    rpm: 6           # pilot hit per-minute 429s at 10 rpm; free-tier limits are not published
+
+  # gemini-3.6-flash: dropped after the pilot (free tier allows only ~20 calls/day).
+
+  gemini-3.1-flash-lite:     # older lite version -> "model update as demand shock" comparison
+    provider: gemini
+    model_id: gemini-3.1-flash-lite
+    params: {temperature: 1.0, max_output_tokens: 400, thinking_level: minimal}
+    price_in: 0.25
+    price_out: 1.50
+    free_tier: true
+    rpm: 6
+
+  # Add when keys are available (check current IDs and prices first):
+  # gpt-mini:
+  #   provider: openai
+  #   model_id: <pinned id>
+  #   params: {temperature: 1.0, max_output_tokens: 400, reasoning_effort: minimal}
+  #   price_in: ...
+  #   price_out: ...
+  #   free_tier: false
+  #   rpm: 60
+  claude-haiku-5-5:          # paid; $0.10 / $0.50 per 1M tokens (prompts up to 100K tokens)
+    provider: anthropic
+    model_id: claude-haiku-5-5
+    # temperature: model default (1.0), not sent; thinking switched off
+    params: {max_output_tokens: 400, thinking: disabled}
+    price_in: 0.10
+    price_out: 0.50
+    free_tier: false
+    rpm: 50
+
+budget:
+  cap_usd: 10.00
+  target_usd: 5.00

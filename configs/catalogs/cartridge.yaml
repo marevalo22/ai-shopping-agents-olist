@@ -1,0 +1,154 @@
+category: cartridge
+display_name: printer ink cartridge
+olist_category: computers_accessories
+prompt_note: All listed cartridges are compatible with the user's printer.
+currency: BRL
+selection:
+  keyword_regex: cartucho
+  exclude_regex: null
+  min_keyword_reviews: 3
+  min_orders: 30
+  funnel:
+    in_category: 1600
+    type_match: 24
+    orders>=30: 11
+    after_variant_collapse: 11
+  dropped_variants: []
+  label_seed: 7
+products:
+- product_id: cartridge_a
+  label: Cartridge A
+  base_price: 89.79
+  base_rating: 4.07
+  base_reviews: 111
+  base_promised_days: 28
+  base_freight: 15.35
+  human:
+    orders: 111
+    share: 0.1611
+    revenue_share: 0.1648
+    actual_days_median: 13.9
+    late_share: 0.126
+    price_cv: 0.13
+    sellers: 7
+  olist_product_id: 656e0eca68dcecf6a31b8ececfabe3e8
+  keyword_reviews: 5
+- product_id: cartridge_b
+  label: Cartridge B
+  base_price: 139.9
+  base_rating: 3.78
+  base_reviews: 77
+  base_promised_days: 28
+  base_freight: 15.22
+  human:
+    orders: 77
+    share: 0.1118
+    revenue_share: 0.1706
+    actual_days_median: 13.2
+    late_share: 0.221
+    price_cv: 0.13
+    sellers: 7
+  olist_product_id: 4298b7e67dc399c200662b569563a2b2
+  keyword_reviews: 9
+- product_id: cartridge_c
+  label: Cartridge C
+  base_price: 61.9
+  base_rating: 4.18
+  base_reviews: 34
+  base_promised_days: 24
+  base_freight: 11.25
+  human:
+    orders: 34
+    share: 0.0493
+    revenue_share: 0.0328
+    actual_days_median: 11.0
+    late_share: 0.059
+    price_cv: 0.031
+    sellers: 5
+  olist_product_id: e5ae72c62ebfa708624f5029d609b160
+  keyword_reviews: 4
+- product_id: cartridge_d
+  label: Cartridge D
+  base_price: 84.89
+  base_rating: 3.74
+  base_reviews: 78
+  base_promised_days: 25
+  base_freight: 15.34
+  human:
+    orders: 78
+    share: 0.1132
+    revenue_share: 0.1023
+    actual_days_median: 12.5
+    late_share: 0.128
+    price_cv: 0.012
+    sellers: 4
+  olist_product_id: 3f14d740544f37ece8a9e7bc8349797e
+  keyword_reviews: 11
+- product_id: cartridge_e
+  label: Cartridge E
+  base_price: 89.49
+  base_rating: 3.5
+  base_reviews: 109
+  base_promised_days: 25
+  base_freight: 13.11
+  human:
+    orders: 110
+    share: 0.1597
+    revenue_share: 0.1543
+    actual_days_median: 15.0
+    late_share: 0.1
+    price_cv: 0.166
+    sellers: 7
+  olist_product_id: 36f60d45225e60c7da4558b070ce4b60
+  keyword_reviews: 25
+- product_id: cartridge_f
+  label: Cartridge F
+  base_price: 81.99
+  base_rating: 4.13
+  base_reviews: 63
+  base_promised_days: 27
+  base_freight: 13.38
+  human:
+    orders: 63
+    share: 0.0914
+    revenue_share: 0.0945
+    actual_days_median: 12.1
+    late_share: 0.095
+    price_cv: 0.086
+    sellers: 6
+  olist_product_id: dbb67791e405873b259e4656bf971246
+  keyword_reviews: 6
+- product_id: cartridge_g
+  label: Cartridge G
+  base_price: 78.9
+  base_rating: 3.56
+  base_reviews: 151
+  base_promised_days: 29
+  base_freight: 15.27
+  human:
+    orders: 154
+    share: 0.2235
+    revenue_share: 0.2112
+    actual_days_median: 15.4
+    late_share: 0.182
+    price_cv: 0.133
+    sellers: 5
+  olist_product_id: e53e557d5a159f5aa2c5e995dfdf244b
+  keyword_reviews: 21
+- product_id: cartridge_h
+  label: Cartridge H
+  base_price: 70.0
+  base_rating: 4.03
+  base_reviews: 62
+  base_promised_days: 24
+  base_freight: 13.81
+  human:
+    orders: 62
+    share: 0.09
+    revenue_share: 0.0693
+    actual_days_median: 12.9
+    late_share: 0.065
+    price_cv: 0.106
+    sellers: 3
+  olist_product_id: 0d85c435fd60b277ffb9e9b0f88f927a
+  keyword_reviews: 6

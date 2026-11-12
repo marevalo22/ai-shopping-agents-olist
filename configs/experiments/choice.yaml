@@ -1,0 +1,10 @@
+# Priority 1: ACES choice experiment (Table 1 randomization + delivery/freight).
+# Haiku 500 per category (as ACES); Gemini 300 = the same first 300 scenarios.
+name: choice
+experiment: choice
+categories: [watch, cartridge]
+models: [claude-haiku-5-5, gemini-3.5-flash-lite, gemini-3.1-flash-lite]
+n_scenarios: 300
+n_per_model: {claude-haiku-5-5: 500}
+seed: 1001
+prompt: default
