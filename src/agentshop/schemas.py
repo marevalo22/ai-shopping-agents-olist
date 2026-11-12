@@ -53,7 +53,7 @@ class Listing(BaseModel):
 
 class Scenario(BaseModel):
     scenario_id: str
-    experiment: str  # choice | base | coldstart | switching
+    experiment: str  # choice | base | coldstart | coldstart2 | switching
     category: str
     seed: int
     arm: dict = Field(default_factory=dict)  # e.g. {"lever": "price", "dose": -0.1, "focal": "watch_c"}

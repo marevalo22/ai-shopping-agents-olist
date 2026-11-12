@@ -1,0 +1,7 @@
+ts,run,models,calls,errors,cost_usd
+2026-11-12T20:21:51,choice,claude-haiku-5-5|gemini-3.5-flash-lite|gemini-3.1-flash-lite,1857,5,0.194038
+2026-11-12T20:25:54,base,claude-haiku-5-5|gemini-3.5-flash-lite|gemini-3.1-flash-lite,209,7,0.036661
+2026-11-12T20:36:44,coldstart,claude-haiku-5-5|gemini-3.5-flash-lite|gemini-3.1-flash-lite,548,7,0.099481
+2026-11-12T21:24:39,coldstart2,claude-haiku-5-5|gemini-3.5-flash-lite|gemini-3.1-flash-lite,248,7,0.043943
+2026-11-12T21:48:00,choice,claude-haiku-5-5|gemini-3.5-flash-lite|gemini-3.1-flash-lite,348,0,0.141831
+2026-11-12T21:51:21,base,claude-haiku-5-5|gemini-3.5-flash-lite|gemini-3.1-flash-lite,398,0,0.153079

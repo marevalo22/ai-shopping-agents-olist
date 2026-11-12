@@ -2,7 +2,7 @@
 name: coldstart
 experiment: coldstart
 categories: [watch, cartridge]
-models: [claude-haiku-5-5, gemini-3.5-flash-lite, gemini-3.1-flash-lite]
+models: [claude-haiku-5-5]  # Gemini dropped from cold-start (decision 2026-11-12)
 n_scenarios: 270
 seed: 1003
 prompt: default

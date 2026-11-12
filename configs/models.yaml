@@ -10,8 +10,8 @@ models:
     params: {temperature: 1.0, max_output_tokens: 400, thinking_level: minimal}
     price_in: 0.30
     price_out: 2.50
-    free_tier: true
-    rpm: 6           # pilot hit per-minute 429s at 10 rpm; free-tier limits are not published
+    free_tier: false  # paid tier from 2026-11-12 21:40 (billing enabled); calls before that were free
+    rpm: 60
 
   # gemini-3.6-flash: dropped after the pilot (free tier allows only ~20 calls/day).
 
@@ -21,8 +21,8 @@ models:
     params: {temperature: 1.0, max_output_tokens: 400, thinking_level: minimal}
     price_in: 0.25
     price_out: 1.50
-    free_tier: true
-    rpm: 6
+    free_tier: false  # paid tier from 2026-11-12 21:40 (billing enabled); calls before that were free
+    rpm: 60
 
   # Add when keys are available (check current IDs and prices first):
   # gpt-mini:

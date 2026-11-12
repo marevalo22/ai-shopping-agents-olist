@@ -113,8 +113,9 @@ A growing share of purchases will be made by AI agents acting for customers. Age
 ### Models (final, after the pilot on 2026-11-12)
 - `claude-haiku-5-5` (paid, thinking off), `gemini-3.5-flash-lite` and `gemini-3.1-flash-lite` (free tier, thinking minimal). The two Gemini lite versions give the "model update as demand shock" comparison.
 - Dropped: `gemini-3.6-flash` (free tier allows only ~20 calls/day). Only the cheapest model tier is allowed from any provider.
-- Scale: choice experiment Haiku 500 per category, Gemini 300 per category (the same first 300 scenarios); base-attribute arm 100 per category; cold-start 9 arms x 30 per category.
-- Gemini runs at 6 requests/min. If a daily quota runs out, that model stops and resumes the next day.
+- Scale: choice experiment Haiku 500 per category, Gemini 300 per category (the same first 300 scenarios); base-attribute arm 100 per category; cold-start 9 arms x 30 per category; cold-start follow-up `coldstart2` (newcomer with 25/50/100 reviews, newcomer at -50% price) 4 arms x 30 per category.
+- **Decision 2026-11-12: Haiku is the main subject; Gemini only for choice + base** (the model-comparison slide: position effects, shares). Gemini is not run on cold-start; Haiku answers the acquisition question.
+- Gemini switched from the free tier to the paid tier on 2026-11-12 (billing enabled, rpm 60) to finish choice + base the same day. Earlier Gemini calls were free.
 - Runs costing under $1 may start without waiting for Mo; above $1, wait for an OK. Commit locally after each run; never push or create a GitHub repo unless Mo asks.
 
 ### Analysis plan (after the runs)
@@ -126,5 +127,6 @@ A growing share of purchases will be made by AI agents acting for customers. Age
 
 1. `scripts/build_catalog.py`, then show Mo both catalogs before anything else.
 2. The engine (schemas, scenario generator, providers, runner, parser, cost estimate).
-3. A 20-scenario pilot per model. **Stop after the pilot** and report invalid-response rates, actual cost, and a first look at the choices before any full run.
-4. Full runs in priority order: choice experiment, cold-start, then switching only if time and budget allow.
+3. A 20-scenario pilot per model (done 2026-11-12). **Stop after the pilot** and report invalid-response rates, actual cost, and a first look at the choices before any full run.
+4. Full runs in priority order: choice experiment, cold-start, then switching only if time and budget allow. **Done 2026-11-12** (choice, base, coldstart, coldstart2; total spend $0.68). Switching not run.
+5. Next: analysis on the real data and the five charts (headroom in % for cartridges; for watches the price coefficient is too small, so use choice-probability lift), then README and the Colab notebook.

@@ -109,13 +109,20 @@ COLDSTART_ARMS = [
     *[{"arm": f"newcomer_faster{int(d * 100)}", "lever": "delivery", "dose": d} for d in (-0.30, -0.50)],
     {"arm": "newcomer_overall_pick", "lever": "overall_pick", "dose": 1},
 ]
+# Follow-up run (coldstart2): how many reviews does a newcomer need, and does a deep price cut help?
+# Kept as a separate arm list so the original run's arm-to-scenario mapping stays unchanged.
+COLDSTART_REVIEW_ARMS = [
+    *[{"arm": f"newcomer_reviews{n}", "lever": "reviews", "dose": n} for n in (25, 50, 100)],
+    {"arm": "newcomer_price-50", "lever": "price", "dose": -0.50},
+]
 NEWCOMER_REVIEWS = 5
 
 
-def coldstart_scenario(cat: Catalog, seed: int, i: int, prefix: str) -> Scenario:
+def coldstart_scenario(cat: Catalog, seed: int, i: int, prefix: str, arms: list[dict] = COLDSTART_ARMS,
+                       experiment: str = "coldstart") -> Scenario:
     """Arms cycle with i; the focal product is drawn at random so it isn't confounded with one product."""
     rng = _rng(seed, cat.category, i)
-    arm = COLDSTART_ARMS[i % len(COLDSTART_ARMS)]
+    arm = arms[i % len(arms)]
     focal = cat.products[int(rng.integers(len(cat.products)))].product_id
     listings = [_base_listing(p, 0) for p in cat.products]
     for li in listings:
@@ -123,7 +130,9 @@ def coldstart_scenario(cat: Catalog, seed: int, i: int, prefix: str) -> Scenario
             continue
         if arm["arm"] != "established":
             li.reviews = NEWCOMER_REVIEWS
-        if arm["lever"] == "price":
+        if arm["lever"] == "reviews":
+            li.reviews = int(arm["dose"])
+        elif arm["lever"] == "price":
             li.price = round(li.price * (1 + arm["dose"]), 2)
         elif arm["lever"] == "delivery":
             li.promised_days = max(1, int(round(li.promised_days * (1 + arm["dose"]))))
@@ -132,12 +141,20 @@ def coldstart_scenario(cat: Catalog, seed: int, i: int, prefix: str) -> Scenario
     listings = _order(listings, rng)
     return Scenario(
         scenario_id=f"{prefix}-{cat.category}-{i:04d}",
-        experiment="coldstart",
+        experiment=experiment,
         category=cat.category,
         seed=seed,
-        arm={**arm, "focal": focal, "newcomer_reviews": NEWCOMER_REVIEWS},
+        arm={**arm, "focal": focal, "newcomer_reviews": int(arm["dose"]) if arm["lever"] == "reviews" else NEWCOMER_REVIEWS},
         listings=listings,
     )
+
+
+def li_reviews(listings: list[Listing], pid: str) -> int:
+    return next(li.reviews for li in listings if li.product_id == pid)
+
+
+def coldstart2_scenario(cat: Catalog, seed: int, i: int, prefix: str) -> Scenario:
+    return coldstart_scenario(cat, seed, i, prefix, arms=COLDSTART_REVIEW_ARMS, experiment="coldstart2")
 
 
 # --------------------------------------------------------------------------- switching (cartridges)
@@ -191,6 +208,7 @@ GENERATORS = {
     "choice": choice_scenario,
     "base": base_scenario,
     "coldstart": coldstart_scenario,
+    "coldstart2": coldstart2_scenario,
     "switching": switching_scenario,
 }
 
