@@ -1,18 +1,18 @@
 
 Status by model (share of calls):
-status                 api_error    ok  repaired   All
-model                                                 
-claude-haiku-5-5               0  1000         0  1000
-gemini-3.1-flash-lite          3   443         0   446
-gemini-3.5-flash-lite          2   408         1   411
-All                            5  1851         1  1857
+status                   ok  repaired   All
+model                                      
+claude-haiku-5-5       1000         0  1000
+gemini-3.1-flash-lite   600         0   600
+gemini-3.5-flash-lite   599         1   600
+All                    2199         1  2200
 
 Tokens and cost by model:
-                       calls     tok_in  ...  paid_equiv               versions
-model                                    ...                                   
-claude-haiku-5-5        1000  1131.4360  ...      0.1940       claude-haiku-5-5
-gemini-3.1-flash-lite    446   941.1941  ...      0.1441  gemini-3.1-flash-lite
-gemini-3.5-flash-lite    411   940.4768  ...      0.1884  gemini-3.5-flash-lite
+                       calls    tok_in  ...  paid_equiv               versions
+model                                   ...                                   
+claude-haiku-5-5        1000  1131.436  ...      0.1940       claude-haiku-5-5
+gemini-3.1-flash-lite    600   944.095  ...      0.1957  gemini-3.1-flash-lite
+gemini-3.5-flash-lite    600   944.095  ...      0.2786  gemini-3.5-flash-lite
 
 [3 rows x 7 columns]
 
@@ -22,13 +22,13 @@ Choice share by product (%), per category and model:
 model              claude-haiku-5-5  ...  gemini-3.5-flash-lite
 chosen_product_id                    ...                       
 cartridge_a                    17.0  ...                   10.0
-cartridge_b                     3.0  ...                    4.0
-cartridge_c                    18.0  ...                   19.0
+cartridge_b                     3.0  ...                    2.0
+cartridge_c                    18.0  ...                   24.0
 cartridge_d                    10.0  ...                   11.0
-cartridge_e                    10.0  ...                   14.0
-cartridge_f                    17.0  ...                   17.0
-cartridge_g                    10.0  ...                    5.0
-cartridge_h                    13.0  ...                   21.0
+cartridge_e                    10.0  ...                   10.0
+cartridge_f                    17.0  ...                   19.0
+cartridge_g                    10.0  ...                    7.0
+cartridge_h                    13.0  ...                   17.0
 
 [8 rows x 3 columns]
 
@@ -49,11 +49,11 @@ watch_h                        11.0  ...                   12.0
 Chosen position distribution (%):
 model            claude-haiku-5-5  gemini-3.1-flash-lite  gemini-3.5-flash-lite
 chosen_position                                                                
-1.0                           6.0                   13.0                   19.0
-2.0                          11.0                   12.0                   17.0
-3.0                          12.0                   12.0                   16.0
-4.0                          14.0                   14.0                   12.0
-5.0                          13.0                   12.0                   11.0
-6.0                          16.0                   13.0                    9.0
-7.0                          14.0                   12.0                   10.0
-8.0                          14.0                   11.0                    7.0
+1                             6.0                   14.0                   20.0
+2                            11.0                   11.0                   15.0
+3                            12.0                   13.0                   16.0
+4                            14.0                   13.0                   11.0
+5                            13.0                   12.0                   12.0
+6                            16.0                   14.0                   11.0
+7                            14.0                   12.0                    8.0
+8                            14.0                   11.0                    7.0
