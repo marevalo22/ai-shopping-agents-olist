@@ -1,0 +1,25 @@
+model,attribute,stated_mention_rate,revealed_share
+claude-haiku-5-5,rating,0.999,0.38691601658009134
+claude-haiku-5-5,price,0.918,0.061538444428128954
+claude-haiku-5-5,reviews,0.953,0.12277768107825915
+claude-haiku-5-5,delivery,0.942,0.10376165403702878
+claude-haiku-5-5,freight,0.964,0.05913858633720922
+claude-haiku-5-5,overall pick,0.33,0.09611515922650044
+claude-haiku-5-5,sponsored,0.436,0.08597428858212833
+claude-haiku-5-5,position,0.001,0.0837781697306539
+gemini-3.5-flash-lite,rating,0.9833333333333333,0.3937232228171168
+gemini-3.5-flash-lite,price,0.675,0.07884524551435629
+gemini-3.5-flash-lite,reviews,0.6433333333333333,0.11159930914227845
+gemini-3.5-flash-lite,delivery,0.49833333333333335,0.11049874587270217
+gemini-3.5-flash-lite,freight,0.4866666666666667,0.07063032972484933
+gemini-3.5-flash-lite,overall pick,0.33,0.11898311165707248
+gemini-3.5-flash-lite,sponsored,0.0,0.0201283297211049
+gemini-3.5-flash-lite,position,0.0,0.09559170555051963
+gemini-3.1-flash-lite,rating,0.965,0.3453172393579581
+gemini-3.1-flash-lite,price,0.55,0.06563559367019892
+gemini-3.1-flash-lite,reviews,0.535,0.1386807863660079
+gemini-3.1-flash-lite,delivery,0.4866666666666667,0.1743699604282058
+gemini-3.1-flash-lite,freight,0.42,0.11234065899559295
+gemini-3.1-flash-lite,overall pick,0.28833333333333333,0.09634458063573917
+gemini-3.1-flash-lite,sponsored,0.0033333333333333335,0.034259425480862096
+gemini-3.1-flash-lite,position,0.0,0.03305175506543516

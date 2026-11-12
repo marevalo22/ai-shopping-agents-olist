@@ -1,0 +1,17 @@
+category,product_id,claude-haiku-5-5,gemini-3.1-flash-lite,gemini-3.5-flash-lite,human,label
+cartridge,cartridge_a,0.2,0.0,0.04,0.1611,A
+cartridge,cartridge_b,0.0,0.0,0.0,0.1118,B
+cartridge,cartridge_c,0.62,1.0,0.9,0.0493,C
+cartridge,cartridge_d,0.0,0.0,0.0,0.1132,D
+cartridge,cartridge_e,0.0,0.0,0.0,0.1597,E
+cartridge,cartridge_f,0.09,0.0,0.03,0.0914,F
+cartridge,cartridge_g,0.0,0.0,0.0,0.2235,G
+cartridge,cartridge_h,0.09,0.0,0.03,0.09,H
+watch,watch_a,0.0,0.0,0.0,0.0927,A
+watch,watch_b,0.01,0.0,0.0,0.0671,B
+watch,watch_c,0.0,0.0,0.0,0.0943,C
+watch,watch_d,0.0,0.0,0.0,0.1543,D
+watch,watch_e,0.99,1.0,1.0,0.243,E
+watch,watch_f,0.0,0.0,0.0,0.1119,F
+watch,watch_g,0.0,0.0,0.0,0.1231,G
+watch,watch_h,0.0,0.0,0.0,0.1135,H

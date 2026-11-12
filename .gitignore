@@ -15,3 +15,4 @@ Instructions\ /
 
 # Papers: link to arXiv in the README instead of redistributing PDFs
 papers/
+data/*.log

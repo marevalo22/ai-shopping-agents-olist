@@ -148,7 +148,12 @@ def fit_model(long: pd.DataFrame, model: str, n_boot: int = 0, seed: int = 0) ->
     return Fit(model, res.params, res.bse, boot, dd.scenario_id.nunique(), never, 1 - res.llf / null_ll)
 
 
-def fit_all(long: pd.DataFrame, n_boot: int = 0) -> dict[str, Fit]:
+def fit_all(long: pd.DataFrame, n_boot: int = 0, category: str | None = None) -> dict[str, Fit]:
+    """One fit per model. With `category`, only that category's choice sets (recommended for price-based
+    quantities: agents are far less price-sensitive for watches than for cartridges). Without it, both
+    categories are pooled with per-category product FE (fine for position and tag effects)."""
+    if category:
+        long = long[long.category == category]
     return {m: fit_model(long, m, n_boot=n_boot) for m in MODEL_COLORS if m in set(long.model)}
 
 
@@ -193,6 +198,28 @@ def headroom_table(fits: dict[str, Fit]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _lift(params: pd.Series, var: str, dx: float, n: int = 8) -> float:
+    """Chance of being picked for one of n otherwise-identical listings once it gets the lever
+    (baseline 1/n): exp(b*dx) / (exp(b*dx) + n - 1). Currency-free, so it also works when the
+    price coefficient is too small for a meaningful price headroom (watches)."""
+    e = np.exp(params[var] * dx)
+    return float(e / (e + n - 1))
+
+
+def lift_table(fits: dict[str, Fit]) -> pd.DataFrame:
+    rows = []
+    for m, f in fits.items():
+        for lever, (var, dx) in LEVERS.items():
+            if var not in f.params:
+                continue
+            lo = hi = np.nan
+            if f.boot is not None and len(f.boot) > 20:
+                draws = f.boot.apply(lambda p: _lift(p, var, dx), axis=1)
+                lo, hi = np.percentile(draws, [2.5, 97.5])
+            rows.append({"model": m, "lever": lever, "p": _lift(f.params, var, dx), "lo": lo, "hi": hi})
+    return pd.DataFrame(rows)
+
+
 def freight_vs_price(fits: dict[str, Fit], mean_price: float) -> pd.DataFrame:
     """R$ of price that one R$ of freight is 'worth' to the agent at the mean price.
     1.0 = treats freight exactly like price; >1 = freight-averse (as humans tend to be)."""
@@ -204,14 +231,14 @@ def freight_vs_price(fits: dict[str, Fit], mean_price: float) -> pd.DataFrame:
 
 # ----------------------------------------------------------------------------- stated vs. revealed
 MENTIONS = {
-    "rating": r"\brat(ing|ed)\b|\bstars?\b|out of 5|/5\b",
-    "price": r"\bprice|\bcheap|\bafford|\binexpensive|\bbudget|\bcost-effective|\bvalue\b|\blow(er|est)? cost",
+    "rating": r"\brat(?:ing|ed)\b|\bstars?\b|out of 5|/5\b",
+    "price": r"\bprice|\bcheap|\bafford|\binexpensive|\bbudget|\bcost-effective|\bvalue\b|\blow(?:er|est)? cost",
     "reviews": r"\breview",
-    "delivery": r"\bdeliver|\bfast(er|est)?\b|\bquick|\barriv|\bdays\b|\bshort(er|est)? (wait|time)",
+    "delivery": r"\bdeliver|\bfast(?:er|est)?\b|\bquick|\barriv|\bdays\b|\bshort(?:er|est)? (?:wait|time)",
     "freight": r"\bshipping\b|\bfreight\b",
     "overall pick": r"overall pick",
     "sponsored": r"\bsponsor",
-    "position": r"\bposition\b|\blisted first\b|\bfirst (option|listing|product)\b|\btop of the list\b",
+    "position": r"\bposition\b|\blisted first\b|\bfirst (?:option|listing|product)\b|\btop of the list\b",
 }
 # attribute -> logit variables whose combined effect defines its revealed importance
 REVEALED_VARS = {
@@ -245,12 +272,17 @@ def revealed_importance(fit: Fit, long: pd.DataFrame) -> pd.Series:
     return s / s.sum()
 
 
-def stated_vs_revealed(fits: dict[str, Fit], long: pd.DataFrame, choices: pd.DataFrame) -> pd.DataFrame:
+def stated_vs_revealed(fits_by_cat: dict[str, dict[str, Fit]], long: pd.DataFrame,
+                       choices: pd.DataFrame) -> pd.DataFrame:
+    """fits_by_cat: {category: {model: Fit}}. Stated = mention rate over all reasons; revealed = the
+    attribute's share of utility spread, averaged over the per-category fits."""
     coded = code_reasons(choices[choices.chosen_product_id.notna()])
     rows = []
-    for m, f in fits.items():
+    models = [m for m in MODEL_COLORS if any(m in f for f in fits_by_cat.values())]
+    for m in models:
         stated = coded[coded.model == m][list(MENTIONS)].mean()
-        revealed = revealed_importance(f, long)
+        revealed = pd.concat([revealed_importance(f[m], long[long.category == c])
+                              for c, f in fits_by_cat.items() if m in f], axis=1).mean(axis=1)
         for k in MENTIONS:
             rows.append({"model": m, "attribute": k, "stated_mention_rate": stated.get(k, np.nan),
                          "revealed_share": revealed.get(k, np.nan)})
@@ -277,7 +309,7 @@ def coldstart_curves(cs_choices: pd.DataFrame) -> pd.DataFrame:
     c["lever"] = arm.map(lambda a: a["lever"])
     c["dose"] = arm.map(lambda a: a["dose"])
     c["won"] = (c.chosen_product_id == arm.map(lambda a: a["focal"])).astype(int)
-    g = c.groupby(["model", "arm_name", "lever", "dose"], dropna=False).won.agg(["mean", "size"]).reset_index()
+    g = c.groupby(["category", "model", "arm_name", "lever", "dose"], dropna=False).won.agg(["mean", "size"]).reset_index()
     z = 1.96
     p, n = g["mean"], g["size"]
     centre = (p + z * z / (2 * n)) / (1 + z * z / n)
@@ -297,17 +329,20 @@ def chart_shares(shares: pd.DataFrame, category: str):
     w = 0.8 / len(series)
     for i, (col, lab, colr) in enumerate(series):
         ax.bar(x + (i - (len(series) - 1) / 2) * w, d[col] * 100, w * 0.9, color=colr, label=lab)
-    ax.set_xticks(x, [f"{category.title()} {l}" for l in d.label])
+    ax.set_xticks(x, list(d.label))
+    ax.set_xlabel(f"{category.title()} (sorted by human sales share; agent share from the base-attribute arm)")
     ax.set_ylabel("Share of purchases (%)")
+    ax.set_ylim(0, 105)
     ax.set_title(f"Same {category}es, different winners: human vs. agent share" if category == "watch"
                  else f"Same {category}s, different winners: human vs. agent share")
     ax.grid(axis="x", visible=False)
-    ax.legend(ncol=len(series), loc="upper right", fontsize=9)
+    ax.legend(ncol=len(series), loc="lower left", bbox_to_anchor=(0, 1.0), fontsize=9)
+    ax.set_title(ax.get_title(loc="left"), loc="left", pad=28)
     _save(fig, f"shares_{category}")
     return fig
 
 
-def chart_headroom(hr: pd.DataFrame):
+def chart_headroom(hr: pd.DataFrame, category: str = "cartridge"):
     style()
     levers = [l for l in LEVERS if l in set(hr.lever)]
     models = [m for m in MODEL_COLORS if m in set(hr.model)]
@@ -325,10 +360,10 @@ def chart_headroom(hr: pd.DataFrame):
     ax.set_yticks(y, levers)
     ax.invert_yaxis()
     ax.set_xlabel("Price change that keeps the same chance of being picked (%)")
-    ax.set_title("What each lever is worth in price, per agent model")
+    ax.set_title(f"What each lever is worth in price, per agent model ({category}s)")
     ax.grid(axis="y", visible=False)
     ax.legend(loc="lower right", fontsize=9)
-    _save(fig, "headroom")
+    _save(fig, f"headroom_{category}")
     return fig
 
 
@@ -358,25 +393,73 @@ def chart_position(fits: dict[str, Fit]):
     return fig
 
 
-def chart_coldstart(curves: pd.DataFrame, category: str | None = None):
+def chart_lift(lifts: dict[str, pd.DataFrame]):
+    """lifts: {category: lift_table}. One panel per category; dotted line = 12.5% baseline."""
     style()
-    fig, ax = plt.subplots(figsize=(9, 4))
-    for m in [m for m in MODEL_COLORS if m in set(curves.model)]:
-        d = curves[curves.model == m]
-        price = d[d.lever == "price"].sort_values("dose", ascending=False)
-        base = d[(d.arm_name == "newcomer")]
-        pts = pd.concat([base.assign(dose=0.0), price])
-        ax.plot(-pts.dose * 100, pts["mean"] * 100, "-o", color=MODEL_COLORS[m], lw=2, ms=6, label=MODEL_LABEL[m])
-        ax.fill_between(-pts.dose * 100, pts.lo * 100, pts.hi * 100, color=MODEL_COLORS[m], alpha=0.12, lw=0)
-        est = d[d.arm_name == "established"]["mean"]
-        if len(est):
-            ax.axhline(float(est.iloc[0]) * 100, color=MODEL_COLORS[m], lw=1, ls="--")
-    ax.axhline(12.5, color=INK_2, lw=0.8, ls=":")
-    ax.text(30, 12.5, "  equal share", va="bottom", ha="right", color=INK_2, fontsize=8)
-    ax.set_xlabel("Newcomer's price cut (%)  [newcomer has 5 reviews; dashed = same product with full reviews]")
-    ax.set_ylabel("Chance the agent picks it (%)")
-    ax.set_title("Cold start: how much discount a new listing needs to win an agent")
-    ax.legend(fontsize=9)
+    cats = list(lifts)
+    levers = [l for l in LEVERS if l in set(pd.concat(lifts.values()).lever)]
+    models = [m for m in MODEL_COLORS if m in set(pd.concat(lifts.values()).model)]
+    fig, axes = plt.subplots(1, len(cats), figsize=(5.2 * len(cats), 0.55 * len(levers) * len(models) / 2 + 1.8),
+                             sharey=True)
+    axes = np.atleast_1d(axes)
+    y = np.arange(len(levers))
+    h = 0.8 / len(models)
+    for ax, c in zip(axes, cats):
+        lt = lifts[c]
+        for i, m in enumerate(models):
+            d = lt[lt.model == m].set_index("lever").reindex(levers)
+            yy = y + (i - (len(models) - 1) / 2) * h
+            ax.barh(yy, d.p * 100, h * 0.85, color=MODEL_COLORS[m], label=MODEL_LABEL[m])
+            if d.lo.notna().any():
+                ax.errorbar(d.p * 100, yy, xerr=[(d.p - d.lo) * 100, (d.hi - d.p) * 100],
+                            fmt="none", ecolor=INK_2, elinewidth=1, capsize=2)
+        ax.axvline(12.5, color=INK_2, lw=0.9, ls=":")
+        ax.set_xlim(0, 100)
+        ax.set_title(f"{c.title()}es" if c == "watch" else f"{c.title()}s", fontsize=10)
+        ax.set_xlabel("Chance the agent picks the listing (%)")
+        ax.grid(axis="y", visible=False)
+    axes[0].set_yticks(y, levers)
+    axes[0].invert_yaxis()
+    axes[-1].legend(loc="lower right", fontsize=8)
+    fig.suptitle("One listing among 8 identical ones (12.5% = dotted line): what each lever does",
+                 x=0.01, ha="left", fontweight="bold", color=INK)
+    _save(fig, "lever_lift")
+    return fig
+
+
+def chart_coldstart(curves: pd.DataFrame, model: str = "claude-haiku-5-5"):
+    """curves: coldstart_curves() over coldstart + coldstart2, with a `category` column.
+    Left: newcomer review count at its normal price. Right: price cut for a 5-review newcomer."""
+    style()
+    d = curves[curves.model == model]
+    marks = {"cartridge": ("o", "-"), "watch": ("s", "--")}
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
+    colr = MODEL_COLORS[model]
+    for cat, (mk, ls) in marks.items():
+        g = d[d.category == cat]
+        if g.empty:
+            continue
+        rev = g[g.arm_name == "newcomer"].assign(x=5.0)
+        rev = pd.concat([rev, g[g.lever == "reviews"].assign(x=lambda t: t.dose.astype(float))]).sort_values("x")
+        a1.plot(rev.x, rev["mean"] * 100, ls=ls, marker=mk, color=colr, lw=2, ms=7, label="Cartridges" if cat == "cartridge" else "Watches")
+        a1.fill_between(rev.x, rev.lo * 100, rev.hi * 100, color=colr, alpha=0.08, lw=0)
+        pr = pd.concat([g[g.arm_name == "newcomer"].assign(x=0.0),
+                        g[g.lever == "price"].assign(x=lambda t: -t.dose.astype(float) * 100)]).sort_values("x")
+        a2.plot(pr.x, pr["mean"] * 100, ls=ls, marker=mk, color=colr, lw=2, ms=7, label="Cartridges" if cat == "cartridge" else "Watches")
+        a2.fill_between(pr.x, pr.lo * 100, pr.hi * 100, color=colr, alpha=0.08, lw=0)
+        est = g[g.arm_name == "established"]["mean"]
+        for ax in (a1, a2):
+            if len(est):
+                ax.axhline(float(est.iloc[0]) * 100, color=INK_2, lw=0.8, ls=ls)
+    a1.set_xlabel("Newcomer's review count (normal price)")
+    a1.set_xticks([5, 25, 50, 100])
+    a2.set_xlabel("Newcomer's price cut, % (5 reviews)")
+    a1.set_ylabel("Chance the agent picks the newcomer (%)")
+    a1.set_ylim(0, 40)
+    a2.text(50, 13.6, "grey: same product with all its reviews", ha="right", va="bottom", color=INK_2, fontsize=8)
+    a1.legend(fontsize=9, loc="upper left")
+    fig.suptitle(f"Cold start ({MODEL_LABEL[model]}): reviews win an agent, discounts don't",
+                 x=0.01, ha="left", fontweight="bold", color=INK)
     _save(fig, "coldstart")
     return fig
 
