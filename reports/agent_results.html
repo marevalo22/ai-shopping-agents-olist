@@ -1,0 +1,360 @@
+<title>Agent Experiment Results</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: one reading column in three parts (what I did / what we found / what it means); charts sit on their own light panels. */
+:root {
+  --bg: #f7f8f6; --surface: #ffffff; --fg: #17191a; --muted: #5a6062; --line: #dfe3e0;
+  --accent: #2a78d6; --accent-soft: #e6effb; --code-bg: #eef1ef;
+  --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "Inter", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121415; --surface: #1b1e20; --fg: #e9ecea; --muted: #a2a9ab; --line: #2c3133;
+  --accent: #6aa7ef; --accent-soft: #1d2a3a; --code-bg: #1f2325; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121415; --surface: #1b1e20; --fg: #e9ecea; --muted: #a2a9ab; --line: #2c3133;
+  --accent: #6aa7ef; --accent-soft: #1d2a3a; --code-bg: #1f2325; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 860px; margin: 0 auto; padding-block: 48px 72px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 44px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 42px); }
+h2 { font-size: 24px; }
+h3 { font-size: 18px; }
+p { margin: 0; max-width: 68ch; }
+code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 3px; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 14px; }
+.lede { font-size: 18px; color: var(--muted); }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 24px; font-family: var(--mono); font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--fg); font-weight: 400; }
+.tldr { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; display: grid; gap: 10px; }
+.tldr ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+nav { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; }
+nav a { color: var(--accent); text-decoration: none; }
+nav a:hover, nav a:focus-visible { text-decoration: underline; }
+.part { display: grid; gap: 28px; }
+.part-head { display: grid; gap: 6px; border-top: 2px solid var(--fg); padding-top: 14px; }
+.part-head .eyebrow { color: var(--accent); }
+section { display: grid; gap: 14px; }
+.num { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+figure { margin: 0; background: #fcfcfb; border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+figure img { display: block; width: 100%; height: auto; }
+figcaption { font-size: 13px; color: #52514e; margin-top: 8px; }
+.sowhat { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 4px 4px 0; max-width: 72ch; }
+.sowhat strong { font-weight: 600; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.two > * { min-width: 0; }
+@media (max-width: 640px) { .two { grid-template-columns: 1fr; } }
+ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 70ch; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; min-width: 540px; }
+th, td { text-align: left; padding: 7px 14px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; }
+pre { margin: 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.5; background: var(--code-bg); border-radius: 6px; padding: 14px 16px; overflow-x: auto; white-space: pre; }
+.answers { display: grid; gap: 8px; }
+.answer { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; font-size: 14px; }
+.answer b { font-family: var(--mono); font-weight: 400; font-size: 12px; color: var(--muted); display: block; }
+footer { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Customer Analytics · agent side · 12 Nov 2026 · Mo</div>
+    <h1>What wins an AI shopping agent on Olist</h1>
+    <p class="lede">More and more purchases will be made by AI assistants shopping on someone's behalf. I tested how three AI models choose between real Olist products, what makes them buy, and how that differs from what Olist's human customers bought.</p>
+    <div class="facts">
+      <span><b>3,580</b> agent purchases</span>
+      <span><b>3</b> AI models</span>
+      <span><b>16</b> real Olist products</span>
+      <span>API cost <b>$0.68</b></span>
+    </div>
+  </header>
+
+  <div class="tldr">
+    <h3>In one minute</h3>
+    <ol>
+      <li>Agents put almost all their purchases on one product. For watches they pick the humans' favourite too, but give it ~100% of purchases where humans give it 24%.</li>
+      <li>The platform's "Overall Pick" badge is the strongest lever; a "Sponsored" tag makes agents avoid a product.</li>
+      <li>Being listed first helps under one AI model and hurts under another.</li>
+      <li>A new seller cannot win an agent with discounts. It needs about 50–100 reviews.</li>
+    </ol>
+  </div>
+
+  <nav aria-label="Sections">
+    <a href="#why">Why this matters</a>
+    <a href="#method">What I did</a>
+    <a href="#findings">What we found</a>
+    <a href="#meaning">What it means</a>
+    <a href="#limits">Limitations</a>
+  </nav>
+
+  <!-- ============================================================ WHY -->
+  <div class="part" id="why">
+    <div class="part-head">
+      <span class="eyebrow">Part 0</span>
+      <h2>Why this matters for our project</h2>
+    </div>
+    <p>Only 3.0% of Olist customers ever buy a second time, so nearly every sale is a new acquisition. Our project asks what wins that first purchase. Today almost all buyers are humans; our working assumption, which we still need to source or label, is that 2–5% are already AI agents and that this share will grow. If agents choose differently from humans, sellers need a different playbook for them.</p>
+    <p>My part answers RQ3: <em>what drives an AI agent's choice on the same products, how does it differ across AI models, and how does it differ from humans?</em></p>
+  </div>
+
+  <!-- ============================================================ METHOD -->
+  <div class="part" id="method">
+    <div class="part-head">
+      <span class="eyebrow">Part 1</span>
+      <h2>What I did: the experiment</h2>
+    </div>
+    <p>The design copies a recent study on AI shopping agents (ACES, Allouah et al. 2025): show an AI model a list of 8 products, ask it to buy one for a typical person, and repeat that thousands of times while changing the product details at random. Because we control exactly what changes, we can say what <em>causes</em> the agent's choice.</p>
+
+    <section>
+      <span class="num">Step 1</span>
+      <h3>Build the product shelf from the Olist dataset</h3>
+      <p>The experiment is not made-up products: every product the agents see is a real Olist product, with its real numbers. This is the link to the human side of our project. Agents and humans face the same shelf, and we can compare what each of them buys.</p>
+      <p><strong>Which Olist tables I used:</strong></p>
+      <ul>
+        <li><code>orders</code>: delivered orders only; purchase date and estimated delivery date give the <em>promised</em> delivery time the buyer saw.</li>
+        <li><code>order_items</code>: price and shipping (freight) per item, and the seller.</li>
+        <li><code>order_reviews</code>: review scores, and the review texts I used to find the product type.</li>
+        <li><code>products</code>: the Olist category of each product.</li>
+      </ul>
+      <p><strong>How I chose the products.</strong> Olist categories are broad (<code>computers_accessories</code> mixes cables, mice and ink), and Olist has no product names. So I identified the product type from what customers wrote in their reviews:</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Filter</th><th>Watches</th><th>Cartridges</th></tr></thead>
+        <tbody>
+          <tr><td>Products in the Olist category</td><td>1,300 (<code>watches_gifts</code>)</td><td>1,600 (<code>computers_accessories</code>)</td></tr>
+          <tr><td>At least 3 reviews mention the product type</td><td>40 ("relógio")</td><td>24 ("cartucho")</td></tr>
+          <tr><td>Remove wall clocks ("parede")</td><td>39</td><td>–</td></tr>
+          <tr><td>At least 30 orders</td><td>20</td><td>11</td></tr>
+          <tr><td>Merge duplicate listings (same seller, same price)</td><td>18</td><td>11</td></tr>
+          <tr><td><strong>Top 8 by orders = the shelf</strong></td><td><strong>8</strong></td><td><strong>8</strong></td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>What each product brings from Olist</strong> (cartridges shown; watches work the same way). These are the starting values that Step 3 later shuffles around:</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Product</th><th>Price (median)</th><th>Rating (avg)</th><th>Reviews</th><th>Promised delivery</th><th>Shipping</th><th>Human sales share</th></tr></thead>
+        <tbody>
+          <tr><td>Cartridge A</td><td>R$ 89.79</td><td>4.07</td><td>111</td><td>28 days</td><td>R$ 15.35</td><td>16.1%</td></tr>
+          <tr><td>Cartridge B</td><td>R$ 139.90</td><td>3.78</td><td>77</td><td>28 days</td><td>R$ 15.22</td><td>11.2%</td></tr>
+          <tr><td>Cartridge C</td><td>R$ 61.90</td><td>4.18</td><td>34</td><td>24 days</td><td>R$ 11.25</td><td>4.9%</td></tr>
+          <tr><td>Cartridge D</td><td>R$ 84.89</td><td>3.74</td><td>78</td><td>25 days</td><td>R$ 15.34</td><td>11.3%</td></tr>
+          <tr><td>Cartridge E</td><td>R$ 89.49</td><td>3.50</td><td>109</td><td>25 days</td><td>R$ 13.11</td><td>16.0%</td></tr>
+          <tr><td>Cartridge F</td><td>R$ 81.99</td><td>4.13</td><td>63</td><td>27 days</td><td>R$ 13.38</td><td>9.1%</td></tr>
+          <tr><td>Cartridge G</td><td>R$ 78.90</td><td>3.56</td><td>151</td><td>29 days</td><td>R$ 15.27</td><td>22.4%</td></tr>
+          <tr><td>Cartridge H</td><td>R$ 70.00</td><td>4.03</td><td>62</td><td>24 days</td><td>R$ 13.81</td><td>9.0%</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>Check of the product type.</strong> Reading the review texts confirms these are ink cartridges, but of different HP models (60XL, 662XL, 92, 74/75XL) that fit different printers. For the experiment this is fine, because the agent is told all cartridges fit the user's printer. For the human comparison it matters: a human could only buy the cartridge that fits their printer, so cartridge sales shares mostly reflect which printers people own. The human-vs-agent comparison is therefore made with watches, where any product can replace another.</p>
+      <p><strong>How it connects to the human analysis:</strong></p>
+      <ul>
+        <li>The <strong>human sales share</strong> of these 8 products is the benchmark the agents are compared with (Finding 1).</li>
+        <li>The agent sees the same variables the human-side models use (price, rating, delivery time, shipping), so human and agent drivers can be put side by side.</li>
+        <li>Delivery is in the experiment because of an Olist fact: late orders average 2.57 stars vs. 4.21 on time. Olist also promises 22–29 days for these products while they actually arrive in 7–15 days, so the promise a buyer (or an agent) sees is much worse than reality.</li>
+        <li>Products are called "Watch A–H" and "Cartridge A–H", so the agent judges only the numbers, never a brand. The link back to the real Olist product ID is kept in the repo.</li>
+      </ul>
+    </section>
+
+    <section>
+      <span class="num">Step 2</span>
+      <h3>Show the agent a shopping list and ask it to buy</h3>
+      <p>Each AI model gets the same instruction and a list of the 8 products as structured data, the way a shopping agent would read a store's product feed. This is a real example from the experiment (shortened to 3 of the 8 products):</p>
+<pre>You are a personal shopping assistant helping someone find a good printer
+ink cartridge. They haven't specified particular requirements, so use your
+best judgment about what would work well for a typical person, and select
+one product to purchase. All listed cartridges are compatible with the
+user's printer. Prices, shipping costs and delivery estimates are set by
+the store and vary between listings.
+
+[ { "product number": 4, "title": "Cartridge G", "price": "R$ 57.93",
+    "rating": "4.5 out of 5", "number of reviews": 62,
+    "shipping": "R$ 9.15", "estimated delivery": "26 days",
+    "badges": ["Sponsored"] },
+  { "product number": 6, "title": "Cartridge F", "price": "R$ 49.40",
+    "rating": "4.6 out of 5", "number of reviews": 155,
+    "shipping": "R$ 9.14", "estimated delivery": "24 days", "badges": [] },
+  { "product number": 7, "title": "Cartridge H", "price": "R$ 83.71",
+    "rating": "4.7 out of 5", "number of reviews": 55,
+    "shipping": "Free shipping", "estimated delivery": "28 days",
+    "badges": ["Overall Pick"] },
+  ... ]
+
+Respond ONLY with a JSON object: {"selected product number": ...,
+"product name": ..., "reason": ...}</pre>
+      <p>What the three models answered for this exact list:</p>
+      <div class="answers">
+        <div class="answer"><b>Claude Haiku 5.5 → Cartridge H</b>"Highest rating (4.7 out of 5) with a solid number of reviews (55), carries the Overall Pick badge, and offers free shipping … it avoids the lower ratings and sponsored placement of other options."</div>
+        <div class="answer"><b>Gemini 3.5 Flash-Lite → Cartridge H</b>"Highest customer rating (4.7 out of 5), features the 'Overall Pick' badge, and offers free shipping with a reasonable delivery time."</div>
+        <div class="answer"><b>Gemini 3.1 Flash-Lite → Cartridge F</b>"The best balance of a high user rating (4.6/5), a significant number of reviews, and the lowest total cost including shipping."</div>
+      </div>
+    </section>
+
+    <section>
+      <span class="num">Step 3</span>
+      <h3>Shuffle the details every time</h3>
+      <p>In every new shopping list, the details are changed at random around each product's real values:</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>What changes</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>Order in the list</td><td>Random order of the 8 products</td></tr>
+          <tr><td>Price</td><td>Real price × random factor (typically ±30%)</td></tr>
+          <tr><td>Rating</td><td>Moved up or down toward 5 stars or away from it</td></tr>
+          <tr><td>Number of reviews</td><td>Real count × random factor (from a few to many times more)</td></tr>
+          <tr><td>Delivery time, shipping cost</td><td>Real value × random factor; 20% of listings get free shipping</td></tr>
+          <tr><td>"Sponsored" tag</td><td>On 1–4 random products</td></tr>
+          <tr><td>"Overall Pick" badge</td><td>On one product that isn't sponsored</td></tr>
+          <tr><td>"Only X left in stock"</td><td>On one other product</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <span class="num">Step 4</span>
+      <h3>Run three experiments</h3>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Experiment</th><th>Question</th><th>Purchases</th></tr></thead>
+        <tbody>
+          <tr><td>Choice experiment</td><td>How much does each detail (price, rating, badge, position…) move the agent?</td><td>2,200 (Haiku 1,000; each Gemini 600)</td></tr>
+          <tr><td>Base shelf</td><td>With every product at its real Olist values, which one does the agent buy? Compare with human sales.</td><td>600 (200 per model)</td></tr>
+          <tr><td>Cold start</td><td>Can a new seller with only 5 reviews win, if it is cheaper, faster, or has more reviews?</td><td>780 (Haiku only)</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <span class="num">Step 5</span>
+      <h3>Read the results with a choice model</h3>
+      <p>A conditional logit model (the standard model for "pick one of several options") estimates how much each detail raises or lowers the chance of being chosen, holding everything else fixed. From it I compute two easy-to-read numbers:</p>
+      <ul>
+        <li><strong>Chance of being picked</strong>: if 8 products are identical, each has a 12.5% chance. How far does one change (a badge, a faster delivery) move that?</li>
+        <li><strong>Price headroom</strong>: how much more a seller could charge after an improvement and still be chosen just as often.</li>
+      </ul>
+      <p>All intervals are 95% bootstrap intervals (the analysis repeated 200 times on resampled data). The models are the cheapest tiers of Anthropic and Google: Claude Haiku 5.5, Gemini 3.5 Flash-Lite and its older version Gemini 3.1 Flash-Lite. Comparing the two Gemini versions shows what a model update does.</p>
+    </section>
+  </div>
+
+  <!-- ============================================================ FINDINGS -->
+  <div class="part" id="findings">
+    <div class="part-head">
+      <span class="eyebrow">Part 2</span>
+      <h2>What we found</h2>
+    </div>
+
+    <section>
+      <span class="num">Finding 1</span>
+      <h3>Agents pile onto one product; humans spread out</h3>
+      <p>On the base shelf (real values, only the order shuffled), all three models pick Watch E almost every time (99–100%). Watch E is also the humans' favourite, but humans give it 24% and spread the rest across all eight watches. Agents agree with humans on the best watch; they just give it everything.</p>
+      <p>Cartridges show the same concentration (Cartridge C gets 62–100% of agent purchases), but here the human comparison is weak: the cartridges are different HP models for different printers, so humans could not choose freely between them (see Step 1). We use cartridges for what drives the agent, not for the human comparison.</p>
+      <div class="two">
+        <figure><img src="figures/shares_watch.png" alt="Watch E gets 99–100% of agent picks vs 24% of human sales"></figure>
+        <figure><img src="figures/shares_cartridge.png" alt="Cartridge C gets 62–100% of agent picks vs 5% of human sales; G gets 0%"></figure>
+      </div>
+      <p><strong>Robustness check.</strong> The products were on sale for different lengths of time (Cartridge D for 5 months, Cartridge B for 16), so total orders partly measure availability. Using orders per month on sale instead, Watch E is still the humans' top watch (23%), and no other watch goes above 16%.</p>
+      <p><strong>Why agents concentrate.</strong> Humans are many different people with different tastes. Every agent call here is the same assistant shopping for "a typical person", so it lands on the same answer. That is also what would happen in reality if many customers use the same AI assistant with default settings.</p>
+      <div class="sowhat"><strong>So what:</strong> agent demand is winner-takes-all. A seller who isn't the agent's pick doesn't get a smaller share; it gets nothing.</div>
+    </section>
+
+    <section>
+      <span class="num">Finding 2</span>
+      <h3>The "Overall Pick" badge beats everything; "Sponsored" backfires</h3>
+      <p>An Overall Pick badge lifts a product from 12.5% to 61–82%, depending on the model. A Sponsored tag pushes it down to 2–9%. A higher rating, more reviews and faster delivery all help in the expected direction.</p>
+      <figure><img src="figures/lever_lift.png" alt="Chance of being picked per lever and model"><figcaption>Bars: chance of being picked when one of 8 identical products gets the change; whiskers: 95% bootstrap intervals.</figcaption></figure>
+      <div class="sowhat"><strong>So what:</strong> paying for placement is the wrong tool for agent traffic. Earning the platform's quality badge is the right one.</div>
+    </section>
+
+    <section>
+      <span class="num">Finding 3</span>
+      <h3>The same top slot helps under one model and hurts under another</h3>
+      <p>Gemini 3.5 buys the first product in the list 37% of the time. Claude Haiku almost never does (2%), and the older Gemini 3.1 shows no position effect at all. None of the models ever mentions position in its stated reason.</p>
+      <figure><img src="figures/position_heatmap.png" alt="Position heatmap per model"><figcaption>Predicted share for identical products at each list position, controlling for all other details.</figcaption></figure>
+      <div class="sowhat"><strong>So what:</strong> the best ranking strategy depends on which AI the customer uses, and a model update (3.1 → 3.5) can change it overnight.</div>
+    </section>
+
+    <section>
+      <span class="num">Finding 4</span>
+      <h3>A new seller can't buy its way in with a discount</h3>
+      <p>A new listing with 5 reviews won 0–3% of the time, even at 50% off. With 50–100 reviews it reaches the 10–13% that the same product gets with its full review history.</p>
+      <figure><img src="figures/coldstart.png" alt="Cold-start curves: reviews help, price cuts don't"><figcaption>Claude Haiku, 30 shopping lists per point; shaded bands are 95% intervals, so read as direction.</figcaption></figure>
+      <div class="sowhat"><strong>So what:</strong> to acquire customers through agents, spend on getting the first 50–100 reviews, not on launch discounts.</div>
+    </section>
+
+    <section>
+      <span class="num">Finding 5</span>
+      <h3>What each improvement is worth in price</h3>
+      <p>For cartridges, how much more a seller could charge after each change and still be chosen just as often. (Agents react to watch prices only a half to a third as strongly, which makes this measure unstable for watches.)</p>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Change</th><th>Claude Haiku</th><th>Gemini 3.5</th><th>Gemini 3.1</th></tr></thead>
+        <tbody>
+          <tr><td>Overall Pick badge</td><td>+292%</td><td>+229%</td><td>+207%</td></tr>
+          <tr><td>Delivery 1 week faster</td><td>+48%</td><td>+45%</td><td>+107%</td></tr>
+          <tr><td>Double the reviews</td><td>+49%</td><td>+27%</td><td>+45%</td></tr>
+          <tr><td>+0.1 star rating</td><td>+37%</td><td>+23%</td><td>+27%</td></tr>
+          <tr><td>Listed first (vs. last)</td><td>−71%</td><td>+140%</td><td>+1% (not significant)</td></tr>
+          <tr><td>Sponsored tag</td><td>−53%</td><td>−14%</td><td>−33%</td></tr>
+        </tbody>
+      </table></div>
+      <p>Agents also treat R$1 of shipping like roughly R$3 of product price (Haiku and Gemini 3.5), so a high shipping fee costs more than the same amount in the price.</p>
+    </section>
+
+    <section>
+      <span class="num">Finding 6</span>
+      <h3>What agents say is not what drives them</h3>
+      <p>Claude Haiku mentions price in about 90% of its reasons, yet price explains only about 6% of its choices. Rating does most of the deciding. Position matters but is never mentioned.</p>
+      <figure><img src="figures/stated_vs_revealed.png" alt="Stated reasons vs actual drivers per model"><figcaption>Coloured: share of reasons that mention a detail. Grey: that detail's share of what actually drives the choice (from the choice model).</figcaption></figure>
+      <div class="sowhat"><strong>So what:</strong> asking an agent why it chose is not a reliable guide. Sellers have to test what moves it.</div>
+    </section>
+  </div>
+
+  <!-- ============================================================ MEANING -->
+  <div class="part" id="meaning">
+    <div class="part-head">
+      <span class="eyebrow">Part 3</span>
+      <h2>What this means</h2>
+    </div>
+    <section>
+      <h3>For Olist and its sellers</h3>
+      <ul>
+        <li><strong>Earn the badge.</strong> The Overall Pick badge is worth more than any discount. Make badge criteria clear and help sellers qualify.</li>
+        <li><strong>Seed reviews for new listings.</strong> A new product needs about 50–100 reviews before an agent will consider it. Budget for review collection, not launch discounts.</li>
+        <li><strong>Keep sponsored placements out of agent-facing feeds.</strong> Agents read the tag and avoid the product.</li>
+        <li><strong>Promise accurate, short delivery and show low shipping.</strong> One week faster delivery is worth about 45% of price; R$1 of shipping weighs like R$3 of price.</li>
+        <li><strong>Don't optimise for one AI.</strong> Position effects flip between models and versions, so a ranking trick that works today can backfire after the next model update.</li>
+      </ul>
+    </section>
+    <section>
+      <h3>For our report and video</h3>
+      <ul>
+        <li><strong>Section 5.3 and 6:</strong> charts and numbers are ready (all tables are in <code>reports/tables/</code>).</li>
+        <li><strong>Section 8.3 "Agent-ready catalog":</strong> the five points above are the initiative; the price-headroom table feeds the ROI.</li>
+        <li><strong>Human side:</strong> it would help to have the human drivers (price, delivery, rating) in comparable units, so we can put humans and agents side by side.</li>
+        <li><strong>Video hook:</strong> "Humans spread their purchases across eight watches. AI shoppers buy just one."</li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- ============================================================ LIMITS -->
+  <div class="part" id="limits">
+    <div class="part-head">
+      <span class="eyebrow">Part 4</span>
+      <h2>Limitations</h2>
+    </div>
+    <ul>
+      <li>Neutral names (Watch A–H): we measure how agents read product details, not how they react to brands.</li>
+      <li>The human shares are real Olist sales, but humans did not choose under the agents' conditions: they bought over two years, through Olist's search and ranking, among many other products, and saw the reviews that existed at the time of purchase.</li>
+      <li>The cartridges are different HP models for different printers, so human cartridge sales reflect printer ownership. We compare humans and agents on watches only.</li>
+      <li>The agent always shops for "a typical person", while humans are many different people. Part of the agents' concentration comes from that.</li>
+      <li>Humans saw photos, titles and brands on Olist; the agents saw only numbers. The human-vs-agent comparison shows what an agent does with the same shelf, not a difference in taste. The Olist ratings are post-delivery survey scores, which may differ from what shoppers saw on the listing.</li>
+      <li>The agent results come from a controlled experiment (causal); the human data is observational (correlation).</li>
+      <li>We used the cheapest model tier from each company. Larger models may behave differently.</li>
+      <li>The cold-start results are Claude Haiku only, with 30 runs per point.</li>
+      <li>Olist data is Brazil, 2016–2018, prices in R$.</li>
+    </ul>
+  </div>
+
+  <footer>
+    <span>Method based on ACES: Allouah, Besbes, Figueroa, Kanoria, Kumar (2025), "What Is Your AI Agent Buying?", arXiv 2508.02630.</span>
+    <span>Data: Olist Brazilian E-Commerce Public Dataset (Kaggle).</span>
+  </footer>
+</div>

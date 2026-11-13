@@ -129,4 +129,5 @@ A growing share of purchases will be made by AI agents acting for customers. Age
 2. The engine (schemas, scenario generator, providers, runner, parser, cost estimate).
 3. A 20-scenario pilot per model (done 2026-11-12). **Stop after the pilot** and report invalid-response rates, actual cost, and a first look at the choices before any full run.
 4. Full runs in priority order: choice experiment, cold-start, then switching only if time and budget allow. **Done 2026-11-12** (choice, base, coldstart, coldstart2; total spend $0.68). Switching not run.
-5. Next: analysis on the real data and the five charts (headroom in % for cartridges; for watches the price coefficient is too small, so use choice-probability lift), then README and the Colab notebook.
+5. **Analysis done 2026-11-13. Start every new session by reading `NEXT_STEPS.md`** (current state, open decisions, to-do).
+6. Original plan: analysis on the real data and the five charts (headroom in % for cartridges; for watches the price coefficient is too small, so use choice-probability lift), then README and the Colab notebook.
