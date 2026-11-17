@@ -167,66 +167,117 @@ def coef_table(fits: dict[str, Fit]) -> pd.DataFrame:
 
 
 # ----------------------------------------------------------------------------- headroom (ACES)
-LEVERS = {  # name: (variable, change)
-    "Overall Pick badge": ("overall_pick", 1),
-    "+0.1 rating": ("rating", 0.1),
-    "Double the reviews": ("ln_reviews", np.log(2)),
-    "Free shipping": ("free_ship", 1),
-    "Delivery 1 week faster": ("promised_days", -7),
-    "Position 1 (vs. 8)": ("pos1", 1),
-    "Sponsored tag": ("sponsored", 1),
+LEVERS = {  # name: [(variable, change), ...]; "FREIGHT" = the category's mean freight (R$, paid listings)
+    "Overall Pick badge": [("overall_pick", 1)],
+    "+0.1 rating": [("rating", 0.1)],
+    "Double the reviews": [("ln_reviews", np.log(2))],
+    # Free shipping = the free-shipping flag switches on AND freight drops from its mean to 0.
+    # (Toggling only the flag would ignore the freight term and understate the lever.)
+    "Free shipping": [("free_ship", 1), ("freight", "-FREIGHT")],
+    "Delivery 1 week faster": [("promised_days", -7)],
+    "Position 1 (vs. 8)": [("pos1", 1)],
+    "Sponsored tag": [("sponsored", 1)],
 }
+# Levers shown as "chance of being picked among 8 identical listings". Position is left out: one listing
+# at #1 with seven at #8 is not a possible shelf; see chart_position for position effects.
+LIFT_LEVERS = [l for l in LEVERS if l != "Position 1 (vs. 8)"]
+
+# Prices were randomized as p * LogNormal(0, 0.3): 95% of shown prices are within x0.56..x1.82 of base.
+# A headroom outside that band extrapolates the log-price term beyond what the agents ever saw.
+PRICE_SIGMA = 0.3
+TESTED_LOG_RANGE = 1.96 * PRICE_SIGMA
 
 
-def _headroom(params: pd.Series, var: str, dx: float) -> float:
-    """exp(beta_x * dx / |beta_price|) - 1: price change that leaves utility unchanged."""
-    return float(np.exp(params[var] * dx / abs(params["ln_price"])) - 1)
+def mean_freight(long: pd.DataFrame) -> float:
+    return float(long.loc[long.freight > 0, "freight"].mean())
 
 
-def headroom_table(fits: dict[str, Fit]) -> pd.DataFrame:
+def _du(params: pd.Series, lever: str, freight: float) -> float | None:
+    """Utility change of a lever (None if one of its variables is not in the model)."""
+    du = 0.0
+    for var, dx in LEVERS[lever]:
+        if var not in params:
+            return None
+        du += params[var] * (-freight if dx == "-FREIGHT" else dx)
+    return du
+
+
+def _headroom(params: pd.Series, lever: str, freight: float) -> float:
+    """exp(dU / |beta_price|) - 1: price change that leaves utility unchanged."""
+    return float(np.exp(_du(params, lever, freight) / abs(params["ln_price"])) - 1)
+
+
+def headroom_table(fits: dict[str, Fit], freight: float) -> pd.DataFrame:
+    """ACES price headroom per lever. `in_tested_range` is False when the point estimate implies a price
+    change beyond the randomized price band (extrapolation; report as direction, not size)."""
     rows = []
     for m, f in fits.items():
-        for lever, (var, dx) in LEVERS.items():
-            if var not in f.params:
+        for lever in LEVERS:
+            if _du(f.params, lever, freight) is None:
                 continue
-            est = _headroom(f.params, var, dx)
+            est = _headroom(f.params, lever, freight)
             lo = hi = np.nan
             if f.boot is not None and len(f.boot) > 20:
-                draws = f.boot.apply(lambda p: _headroom(p, var, dx), axis=1)
+                draws = f.boot.apply(lambda p: _headroom(p, lever, freight), axis=1)
                 lo, hi = np.percentile(draws, [2.5, 97.5])
-            rows.append({"model": m, "lever": lever, "headroom": est, "lo": lo, "hi": hi})
+            rows.append({"model": m, "lever": lever, "headroom": est, "lo": lo, "hi": hi,
+                         "in_tested_range": bool(abs(np.log1p(est)) <= TESTED_LOG_RANGE)})
     return pd.DataFrame(rows)
 
 
-def _lift(params: pd.Series, var: str, dx: float, n: int = 8) -> float:
+def _lift(params: pd.Series, lever: str, freight: float, n: int = 8) -> float:
     """Chance of being picked for one of n otherwise-identical listings once it gets the lever
-    (baseline 1/n): exp(b*dx) / (exp(b*dx) + n - 1). Currency-free, so it also works when the
+    (baseline 1/n): exp(dU) / (exp(dU) + n - 1). Currency-free, so it also works when the
     price coefficient is too small for a meaningful price headroom (watches)."""
-    e = np.exp(params[var] * dx)
+    e = np.exp(_du(params, lever, freight))
     return float(e / (e + n - 1))
 
 
-def lift_table(fits: dict[str, Fit]) -> pd.DataFrame:
+def lift_table(fits: dict[str, Fit], freight: float) -> pd.DataFrame:
     rows = []
     for m, f in fits.items():
-        for lever, (var, dx) in LEVERS.items():
-            if var not in f.params:
+        for lever in LIFT_LEVERS:
+            if _du(f.params, lever, freight) is None:
                 continue
             lo = hi = np.nan
             if f.boot is not None and len(f.boot) > 20:
-                draws = f.boot.apply(lambda p: _lift(p, var, dx), axis=1)
+                draws = f.boot.apply(lambda p: _lift(p, lever, freight), axis=1)
                 lo, hi = np.percentile(draws, [2.5, 97.5])
-            rows.append({"model": m, "lever": lever, "p": _lift(f.params, var, dx), "lo": lo, "hi": hi})
+            rows.append({"model": m, "lever": lever, "p": _lift(f.params, lever, freight), "lo": lo, "hi": hi})
     return pd.DataFrame(rows)
 
 
 def freight_vs_price(fits: dict[str, Fit], mean_price: float) -> pd.DataFrame:
-    """R$ of price that one R$ of freight is 'worth' to the agent at the mean price.
-    1.0 = treats freight exactly like price; >1 = freight-averse (as humans tend to be)."""
-    return pd.DataFrame([
-        {"model": m, "freight_R$_equiv_price_R$": (f.params["freight"] / (f.params["ln_price"] / mean_price))}
-        for m, f in fits.items()
-    ])
+    """R$ of price that one R$ of freight is 'worth' to the agent at the mean price (paid-shipping listings;
+    the free-shipping jump is separate). 1.0 = treats freight exactly like price; >1 = freight-averse."""
+    rows = []
+    for m, f in fits.items():
+        ratio = lambda p: p["freight"] / (p["ln_price"] / mean_price)
+        lo = hi = np.nan
+        if f.boot is not None and len(f.boot) > 20:
+            lo, hi = np.percentile(f.boot.apply(ratio, axis=1), [2.5, 97.5])
+        rows.append({"model": m, "freight_R$_equiv_price_R$": ratio(f.params), "lo": lo, "hi": hi})
+    return pd.DataFrame(rows)
+
+
+def product_fe_table(fits: dict[str, Fit]) -> pd.DataFrame:
+    """Product fixed effects (vs. the first product kept). With neutral labels and all attributes in the
+    model these should be near zero; large values mean something about a listing is not captured."""
+    rows = []
+    for m, f in fits.items():
+        for k in [i for i in f.params.index if i.startswith("fe_")]:
+            rows.append({"model": m, "product_id": k[3:], "coef": f.params[k], "se": f.bse[k],
+                         "z": f.params[k] / f.bse[k]})
+        for p in f.dropped_products:
+            rows.append({"model": m, "product_id": p, "coef": np.nan, "se": np.nan, "z": np.nan})
+    return pd.DataFrame(rows)
+
+
+def implied_discount(fit: Fit, reviews_new: float, reviews_old: float) -> float:
+    """Logit-implied price cut a newcomer needs to offset having fewer reviews:
+    1 - exp(-beta_rev * ln(old/new) / |beta_price|)."""
+    du = fit.params["ln_reviews"] * np.log(reviews_old / reviews_new)
+    return float(1 - np.exp(-du / abs(fit.params["ln_price"])))
 
 
 # ----------------------------------------------------------------------------- stated vs. revealed
@@ -281,10 +332,12 @@ def stated_vs_revealed(fits_by_cat: dict[str, dict[str, Fit]], long: pd.DataFram
     models = [m for m in MODEL_COLORS if any(m in f for f in fits_by_cat.values())]
     for m in models:
         stated = coded[coded.model == m][list(MENTIONS)].mean()
+        stated_share = stated / stated.sum()
         revealed = pd.concat([revealed_importance(f[m], long[long.category == c])
                               for c, f in fits_by_cat.items() if m in f], axis=1).mean(axis=1)
         for k in MENTIONS:
             rows.append({"model": m, "attribute": k, "stated_mention_rate": stated.get(k, np.nan),
+                         "stated_share": stated_share.get(k, np.nan),
                          "revealed_share": revealed.get(k, np.nan)})
     return pd.DataFrame(rows)
 
@@ -305,7 +358,7 @@ def agent_vs_human_shares(base_choices: pd.DataFrame) -> pd.DataFrame:
 
 def coldstart_curves(cs_choices: pd.DataFrame) -> pd.DataFrame:
     """P(the focal product is chosen) per arm and model, with a Wilson 95% interval."""
-    c = cs_choices[cs_choices.status != "api_error"].copy()
+    c = cs_choices[(cs_choices.status != "api_error") & (cs_choices.model == "claude-haiku-5-5")].copy()
     arm = c.arm.map(json.loads)
     c["arm_name"] = arm.map(lambda a: a["arm"])
     c["lever"] = arm.map(lambda a: a["lever"])
@@ -317,6 +370,17 @@ def coldstart_curves(cs_choices: pd.DataFrame) -> pd.DataFrame:
     centre = (p + z * z / (2 * n)) / (1 + z * z / n)
     half = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
     g["lo"], g["hi"] = centre - half, centre + half
+    return g
+
+
+def coldstart_pooled_price(curves: pd.DataFrame) -> pd.DataFrame:
+    """All price-cut arms for the 5-review newcomer pooled: wins / shopping lists, with a Wilson interval."""
+    d = curves[curves.lever == "price"].assign(wins=lambda t: (t["mean"] * t["size"]).round())
+    g = d.groupby("category").agg(wins=("wins", "sum"), n=("size", "sum")).reset_index()
+    z, p, n = 1.96, g.wins / g.n, g.n
+    centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / (1 + z * z / n)
+    g["lo"], g["hi"] = np.maximum(centre - half, 0), centre + half
     return g
 
 
@@ -354,14 +418,18 @@ def chart_headroom(hr: pd.DataFrame, category: str = "cartridge"):
     for i, m in enumerate(models):
         d = hr[hr.model == m].set_index("lever").reindex(levers)
         yy = y + (i - (len(models) - 1) / 2) * h
-        ax.barh(yy, d.headroom * 100, h * 0.9, color=MODEL_COLORS[m], label=MODEL_LABEL[m])
+        alpha = [1.0 if ok else 0.35 for ok in d.in_tested_range.fillna(True)]
+        bars = ax.barh(yy, d.headroom * 100, h * 0.9, color=MODEL_COLORS[m], label=MODEL_LABEL[m])
+        for b, a in zip(bars, alpha):
+            b.set_alpha(a)
         if d.lo.notna().any():
             ax.errorbar(d.headroom * 100, yy, xerr=[(d.headroom - d.lo) * 100, (d.hi - d.headroom) * 100],
                         fmt="none", ecolor=INK_2, elinewidth=1, capsize=2)
     ax.axvline(0, color=INK_2, lw=0.8)
     ax.set_yticks(y, levers)
     ax.invert_yaxis()
-    ax.set_xlabel("Price change that keeps the same chance of being picked (%)")
+    ax.set_xlabel("Price change that keeps the same chance of being picked (%)\n"
+                  "faded bars: beyond the price range tested (x0.56 to x1.82), read as direction only")
     ax.set_title(f"What each lever is worth in price, per agent model ({category}s)")
     ax.grid(axis="y", visible=False)
     ax.legend(loc="lower right", fontsize=9)
@@ -399,7 +467,7 @@ def chart_lift(lifts: dict[str, pd.DataFrame]):
     """lifts: {category: lift_table}. One panel per category; dotted line = 12.5% baseline."""
     style()
     cats = list(lifts)
-    levers = [l for l in LEVERS if l in set(pd.concat(lifts.values()).lever)]
+    levers = [l for l in LIFT_LEVERS if l in set(pd.concat(lifts.values()).lever)]
     models = [m for m in MODEL_COLORS if m in set(pd.concat(lifts.values()).model)]
     fig, axes = plt.subplots(1, len(cats), figsize=(5.2 * len(cats), 0.55 * len(levers) * len(models) / 2 + 1.8),
                              sharey=True)
@@ -475,14 +543,16 @@ def chart_stated_revealed(svr: pd.DataFrame):
     for ax, m in zip(axes, models):
         d = svr[svr.model == m].set_index("attribute").reindex(attrs)
         y = np.arange(len(attrs))
-        ax.barh(y - 0.2, d.stated_mention_rate * 100, 0.38, color=MODEL_COLORS[m], label="Stated: % of reasons mentioning it")
-        ax.barh(y + 0.2, d.revealed_share * 100, 0.38, color=HUMAN_COLOR, label="Revealed: % of choice driven by it")
+        ax.barh(y - 0.2, d.stated_share * 100, 0.38, color=MODEL_COLORS[m], label="Stated: share of all mentions")
+        ax.barh(y + 0.2, d.revealed_share * 100, 0.38, color=HUMAN_COLOR, label="Revealed: share of utility spread")
         ax.set_yticks(y, attrs)
         ax.invert_yaxis()
         ax.set_title(MODEL_LABEL[m], fontsize=10)
         ax.grid(axis="y", visible=False)
     axes[0].legend(loc="lower right", fontsize=8)
-    fig.suptitle("What agents say drives their choice vs. what actually does", x=0.01, ha="left",
-                 fontweight="bold", color=INK)
+    fig.suptitle("What agents say drives their choice vs. what actually does (both scaled to 100%)", x=0.01,
+                 ha="left", fontweight="bold", color=INK)
+    fig.text(0.01, -0.03, "Revealed shares depend on how widely each attribute was randomized; compare rankings, "
+             "not exact sizes.", fontsize=8, color=INK_2)
     _save(fig, "stated_vs_revealed")
     return fig
